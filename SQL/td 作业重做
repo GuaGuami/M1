@@ -1,0 +1,40 @@
+*易错重点
+
+
+4.5 Premières consultations de la BD
+
+1. Afficher les commandes du 17/09/2020
+select comnum
+from commande 
+where date = '17/09/2020'
+
+
+*2. Donner les noms des produits ayant pour initiale B
+select prodlib
+from produit 
+where produit like '%B'
+
+请问以b开头 以b结尾 中间含有b 如何表达？
+
+
+3. Donner le nom des produits
+select prodlib
+from produit 
+
+
+4. Donner le nom et le volume des produits
+select prodlib, prodvolume
+from produit 
+
+
+5. Donner les secteurs de la ville de Toulouse (en-têtes personnalisés)
+select secnum AS "Numéro de secteur de Toulouse"
+from secteur
+where secville = 'Toulouse'
+
+6. Donner les commandes pour lesquelles la date de livraison n’est pas précisée
+
+
+7. Donner les commandes passées en septembre 2021
+8. Donner les codes des produits en alerte (quantité en stock inférieure à la quantité 
+d’alerte (classement des résultats par criticité basée sur le stock des produits)
