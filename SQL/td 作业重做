@@ -32,9 +32,154 @@ select secnum AS "Numéro de secteur de Toulouse"
 from secteur
 where secville = 'Toulouse'
 
-6. Donner les commandes pour lesquelles la date de livraison n’est pas précisée
+*6. Donner les commandes pour lesquelles la date de livraison n’est pas précisée
+select comnum
+from commande
+where comdateliv is null
 
+查询没有值的字段
 
 7. Donner les commandes passées en septembre 2021
+select *
+from commande
+where '01/09/2020'<=comdateliv <='31/09/2020'
+或者
+to_char(comdateliv, 'MM/YYYY') = '09/2020'
+
+
+
 8. Donner les codes des produits en alerte (quantité en stock inférieure à la quantité 
 d’alerte (classement des résultats par criticité basée sur le stock des produits)
+select prodnum, (qtealert -qtestock) as 'QUANTITE MANQUE'
+from  stocker s
+where  s.qtectock < s.qtealert
+
+
+4.7 Consultation multi-tables
+Dans les requêtes ci-dessous, plusieurs tables doivent être spécifiées dans la clause From du 
+Select.
+
+
+1. Donner les commandes (numéro, date et état) passées en septembre 2021 ainsi que les 
+magasins les ayant émises
+select com.comnum, com.comdate, cometat
+from commande com, magsin m
+where com.magnum = com.comnum
+and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
+
+
+2. Donner le secteur (ville et quartier) du magasin La Marée
+a. Peut-on écrire la jointure de cette requête avec une sous-requête ?
+oui
+b. Justifiez votre réponse
+select s.secville, s.secquartier
+from secteur
+where s.secnum in
+  (select secnum
+  from magsin
+  where magnom= 'La Marée'
+  )
+
+
+3. Donner les produits (libellé) et les quantités commandées pour les commandes passées 
+en septembre 2021
+a. Peut-on écrire les jointures de cette requête avec des sous-requêtes ?
+oui
+b. Justifiez vos réponses pour chaque jointure
+select prodlib, con.qtecom
+from produit, concerner con
+where prodnum in
+  (select produm
+  from produit p, concerner con, commande com
+  where to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
+  and p.prodnum = con.prodnum
+  and com.comnum = con.comnum
+  )
+and p.prodnum = con.prodnum
+
+4. Donner la liste des commandes globales (numéro et date) dans lesquelles est factorisée 
+la commande du magasin La Marée du 17 avril 2021
+5. Donner la liste des produits figurant dans la commande du magasin La Marée datée du 
+17 avril 2021, en précisant pour chaque produit la commande globale (numéro et date) 
+dans laquelle il a été factorisé 
+6. Liste des couples (produit, commande) qui ont été factorisés par erreur sur deux 
+commandes globales différentes
+7. Donner les produits (libellé) avec les quantités commandées concernant les 
+commandes passées en septembre 2021 par le magasin La Marée
+8. Donner les produits (libellé) en alerte pour le magasin La Marée 
+9. Donner la liste des produits (libellé) avec les quantités commandées concernant les 
+commandes globales de septembre 2021.
+10. Donner pour chaque produit figurant sur la commande du 17 avril 2021 de la marée, le 
+nom du fournisseur choisi par la centrale d'achat.
+
+
+
+
+
+
+
+
+
+
+5.les transaction
+
+il faut creer 2 utilisateur 
+- sm_chef_ bank  
+- sm_utilisateur_ bank:
+     5.1-5.3 - 首先做一个adm 再使用admin 
+      - 在Oracle里面做utilisateur
+      - crer la connecion 
+      - crer bd
+      - donner des droit
+      
+      
+      
+登入adm 输入密码
+然后creer utilisateur pour YB_CHEF_BQNK 和YB_UTLI_BQNK一定要大写
+点击其这个用户右键 creer utilisateur，role connecter 和resource
+点击绿色加号，然后connexion，账号是chef 和utli，就可以打开2个窗口
+
+将creationbdbank.sql的代码复制到 chef 里面
+
+Grant Select on Client to  改名_util_bank;
+Grant Select on Titulaire to 改名_util_bank;
+Grant Select, Update on Compte to 改名_util_bank
+      
+将2个excel数据和别的数据导入chef 里面创建数据
+
+
+完成表格需要的东西
+观察多个使用者对数据库的更新的时候，他们的表格有什么变化？
+
+第一个表格
+使用者执行 update 后使用rollback （意思是annuler，是取消之前的的操作），所以变回原来的
+
+第二个表格
+使用者执行 update 后使用commit （意思是valider），所以使用者表格变，chef 表格不变。
+之后chef 执行commit （意思是valider），所以chef 的表格也会变。
+
+这种情况会很危险：因为表格会少了数据
+为了避免这种情况 所以看第三种情况
+
+第三个表格
+是做了什么操作？
+不会缺少数据。
+
+请问第二个表和第三个表格之间有什么差别？？？
+
+
+Interblocage第四个表格
+使用者 update （可以理解bloque）
+之后 chef 也用update 
+由于t2 t3一直在循环？
+
+第五个表格
+？？？
+
+
+
+
+
+
+
+
