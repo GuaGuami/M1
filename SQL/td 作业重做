@@ -63,8 +63,8 @@ Select.
 1. Donner les commandes (numéro, date et état) passées en septembre 2021 ainsi que les 
 magasins les ayant émises
 select com.comnum, com.comdate, cometat
-from commande com, magsin m
-where com.magnum = com.comnum
+from commande com, magasin m
+where com.magnum = m.comnum
 and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
 
 
@@ -86,6 +86,7 @@ en septembre 2021
 a. Peut-on écrire les jointures de cette requête avec des sous-requêtes ?
 oui
 b. Justifiez vos réponses pour chaque jointure
+
 select prodlib, con.qtecom
 from produit, concerner con
 where prodnum in
@@ -99,11 +100,50 @@ and p.prodnum = con.prodnum
 
 4. Donner la liste des commandes globales (numéro et date) dans lesquelles est factorisée 
 la commande du magasin La Marée du 17 avril 2021
-5. Donner la liste des produits figurant dans la commande du magasin La Marée datée du 
+
+select cgb.comglobnum, cgb.comglobdate
+from commandeglogbale cgb, factoriser f, commande c, magasin m
+where m.magnum = com.magnum
+and f.comnum = c.comnum
+and f.comglobnum = cgb.comglobnum
+and m.magnom = "La Marée"
+and c.comdate = "17/04/2021"
+
+
+
+*5. Donner la liste des produits figurant dans la commande du magasin La Marée datée du 
 17 avril 2021, en précisant pour chaque produit la commande globale (numéro et date) 
 dans laquelle il a été factorisé 
-6. Liste des couples (produit, commande) qui ont été factorisés par erreur sur deux 
+
+SELECT p.prodnum, p.prodnom, p.prodvolume, comg.comglobnum, com.comglobdate
+FROM stocker s,produit p, magasin m,commande c,factoriser f,commandeglobale comg
+WHERE p.prodnum = s.prodnum
+AND m.prodnum = s.prodnum
+AND c.magnum = m.magnum
+AND f.comnum = c.comnum
+AND comg.comgblobnum = f.comglobnum
+AND m.magnom = "La Marée"
+AND to_char(com.comdate, 'JJ/MM/YYYY') = '17/04/2021';
+
+
+
+*6. Liste des couples (produit, commande) qui ont été factorisés par erreur sur deux 
 commandes globales différentes
+
+select p.prodlib, c.comnum
+from concerner con, produit p, commande c
+where c.comnum = con.comnum
+and p.prodnum = con.prodnum
+and f.comnum in 
+    (select f.comnum
+    from factoriser f1, factoriser f
+    where f1.comglobnum<>f.comnum
+    having count(f1.comglobnum)=2
+    )
+
+
+
+
 7. Donner les produits (libellé) avec les quantités commandées concernant les 
 commandes passées en septembre 2021 par le magasin La Marée
 8. Donner les produits (libellé) en alerte pour le magasin La Marée 
