@@ -69,7 +69,7 @@ where com.magnum = m.comnum
 and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
 
 
-(没对答案)2. Donner le secteur (ville et quartier) du magasin La Marée
+2. Donner le secteur (ville et quartier) du magasin La Marée
 a. Peut-on écrire la jointure de cette requête avec une sous-requête ?
 oui
 b. Justifiez votre réponse
@@ -82,22 +82,24 @@ where s.secnum in
   )
 
 
-(没对答案)3. Donner les produits (libellé) et les quantités commandées pour les commandes passées 
+
+3. Donner les produits (libellé) et les quantités commandées pour les commandes passées 
 en septembre 2021
 a. Peut-on écrire les jointures de cette requête avec des sous-requêtes ?
 oui
 b. Justifiez vos réponses pour chaque jointure
 
 select prodlib, con.qtecom
-from produit, concerner con
-where prodnum in
-  (select produm
-  from produit p, concerner con, commande com
-  where to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
-  and p.prodnum = con.prodnum
+from produit, concerner con， commande com
+where com.comnun in
+  (select com.comnum
+  from concerner con, commande com
+  where to_char(com.comdateliv, 'MM/YYYY') = '09/2020
   and com.comnum = con.comnum
   )
 and p.prodnum = con.prodnum
+
+
 
 4. Donner la liste des commandes globales (numéro et date) dans lesquelles est factorisée 
 la commande du magasin La Marée du 17 avril 2021
@@ -200,7 +202,7 @@ nom du fournisseur choisi par la centrale d'achat.
 SELECT p.prodnum, p.prodnom, fou.fournum
 FROM stocker s,produit p, magasin m,commande c, fournisseur fou, fournir f
 WHERE p.prodnum = s.prodnum
-AND m.prodnum = s.prodnum
+AND m.magnum = s.magnum
 AND c.magnum = m.magnum
 AND f.fournum = fou.fournum
 AND p.prodnum = f.prodnum
@@ -224,28 +226,33 @@ and COMMANDEGLOBALE.fournum = fournisseur.fournum
 
 4.8 Requêtes ensemblistes 设置查询
 Les requêtes ci-dessous nécessitent l'utilisation d'opérateurs ensemblistes de l'algèbre 
-relationnelle 运用集合运算符号
+relationnelle 运用集合运算符号 (intersection ， union， minus)
+
+------知识点回顾-------
+opérateurs de composition : 
+    - union --> ou
+    - intersect --> et/ à la fois..et (可以用intersect 也可以用in 也可以用and )
+    - minus --> NE...PAS/ NE...PLUS (可以用 NOT IN)
+
+
 
 1. Donner la liste des produits qui ne sont pas stockés par le magasin 'La Marée'
-
-运算符号是： intersection ， union， minus ?
-
-
-(
-select *
-from produit 
-where p.prodnum = s.prodnum 
-and m.magnum = s.magnum)
-minus
+以下两种方法都对
 (
 select p.prodnum
 from produit p, stocker s, magasin m
 where p.prodnum = s.prodnum 
+)
+minus
+(
+select distinct p.prodnum
+from produit p, stocker s, magasin m
+where p.prodnum = s.prodnum 
 and m.magnum = s.magnum
 and magnom = "La Marée")
-  
-是否可以这么做呢？
 
+
+做法2
 select *
 from produit 
 where prodnum not in 
@@ -257,75 +264,350 @@ where prodnum not in
   )
   
 请问in 和not in 是运算符号吗
+不是，但是可以用他们做
 
-2. Donner la liste des produits fournis à la fois par le fournisseur 'Seguin' et par le 
+需要讨论2. Donner la liste des produits fournis à la fois par le fournisseur 'Seguin' et par le 
 fournisseur 'Petit Breton'
+请问 à la fois 同时 = et：
+intersection 和 in -->可以理解为：属于1的情况，也属于2的情况
+
+这个没有答案 需要讨论
+(
+select p.prodnum, p.prodlib, p.prodvolume
+from produit p, founir f, fournisseur fou
+where p.prodnum = f.prodnum
+and fou.fournum = f.fournum
+and fou.fournom = "Petit Breton")
+intersection
+(
+select p.prodnum, p.prodlib, p.prodvolume
+from produit p, founir f, fournisseur fou
+where p.prodnum = f.prodnum
+and fou.fournum = f.fournum
+and fou.fournom = "Seguin")
+
+
+--2绝对对
+SELECT P.PRODNUM, P.PRODLIB
+FROM PRODUIT P, FOURNIR F, FOURNISSEUR FOUR
+WHERE FOUR.FOURNUM = F.FOURNUM
+AND P.FOURNUM =F.FOURNUM
+AND FOUR.FOURNOM = 'Seguin'
+AND P.PRODNOM IN 
+( select P.PRODNOM
+  FROM FOURNIR F, FOURNISSEUR FOUR
+  WHERE FOUR.FOURNUM=F.FOURNUM
+  AND FOUR.FOURNOM = 'Petit Breton');
 
 
 
-
-3. Liste des produits commandés par un magasin et qui n'ont pas été factorisés sur une 
+需要讨论3. Liste des produits commandés par un magasin et qui n'ont pas été factorisés sur une 
 commande globale
+法一可以和她探讨下
 
-4. Donner pour le produit 'Huitres' la listes des commandes pour lesquelles il a été 
+1
+(
+select p.prodnum
+from produit p, concerner con, commande com, magasin m
+where con.prodnum =p.prodnum
+and con.comnum = com.comnum
+)
+minus
+(
+select p.prodnum
+from produit p, concerner con, commande com, magasin m, factroriser f, commandeglobale comgb
+where con.prodnum =p.prodnum
+and con.comnum = com.comnum
+and f.produnm = comgb.comglobnum
+and f.comnum = com.comnum)
+
+
+蒋敏的答案
+(select P.PRODLIB, C.COMNUM 
+from PRODUIT P, CONCERNER C
+where P.PRODNUM = C.PRODNUM)
+MINUS
+(select F.COMNUM? P.PRODLIB
+  from FACTORISER F, PRODUIT P
+  WHERE P.PRODNUM = F.PRODNUM);
+
+
+
+做法2 绝对正确
+select p.prodnum 
+from produit p, concerner con, commande com
+where con.prodnum =p.prodnum
+and con.comnum = com.comnum
+and con.comnum  not in (
+    select comnum
+    from produit p, concerner con, commande com, factroriser f, commandeglobale comgb
+    where con.prodnum =p.prodnum
+    and con.comnum = com.comnum
+    and f.produnm = comgb.comglobnum
+    and f.comnum = com.comnum)
+
+
+
+
+需要讨论（可以在多看）4. Donner pour le produit 'Huitres' la listes des commandes pour lesquelles il a été 
 commandé et il n'a pas été factorisé sur une commande globale.
 
-5. Donner le code et la date des commandes ne contenant que des huitres.
+下面不知道对不对
+(
+select com.comnum, com.comdate, com.comdateliv, com.cometat
+from commande com, concerner con, produit p
+where con.prodnum = p.prodnum
+and com.comnum = con.comnum
+and p.prodnum = "Huitres"
+and com.comnum not in 
+  (
+  select com.comnum, com.comdate, com.comdateliv, com.cometat
+  from commande com, concerner con, produit p
+  where con.prodnum = p.prodnum
+  and com.comnum = con.comnum
+  and p.prodnum = "Huitres"
+  and f.produnm = comgb.comglobnum
+  and f.comnum = com.comnum
+  )
 
+这是对的
+(select C.COMNUM, P.PRODLIB
+from PRODUIT P, CONCERNER C
+where P.PRODNUM = C.PRODNUM
+AND P.PRODLIB = 'Huitres'
+)
+MINUS
+(select F.COMNUM, P.PRODLIB
+  from PRODUIT P, FACTORISER F
+  WHERE P.PRODNUM = F.PRODNUM
+  AND P.PRODLIB = 'Huitres'
+  );
+分析：筛选出全部关于商品为生蚝的订单号和商品名字 - 筛选出f表和商品表中的生蚝（这里的意思是筛选出已经分配商品名字为生蚝的订单）
+
+
+（难，有不懂）5. Donner le code et la date des commandes ne contenant que des huitres.
+这里是只有包含牡蛎的订单的代码和日期
+
+  select com.comnum
+  from concerner con, commande com, produit p
+  where con.prodnum = p.prodnum
+  and com.comnum = con.comnum
+  and prodlib ="Huitres"
+  
+  
+ 蒋明的答案，看不懂-->为什么这里还要减去第二个
+(select distinct C.COMNUM, COM.COMDATE
+from COMMANDE COM, CONCERNER C, PRODUIT P
+where P.PRODNUM = C.PRODNUM
+AND C.COMNUM = COM.COMNUM
+AND P.PRODLIB = 'Huitres')
+MINUS
+(select C.COMNUM, COM.COMDATE
+from COMMANDE COM, CONCERNER C, PRODUIT P
+where P.PRODNUM = C.PRODNUM
+AND C.COMNUM = COM.COMNUM
+AND P.PRODLIB <> 'Huitres');
 
 
 
 4.9 Mise à jour du schéma de la BD (utilisation du LDD)
-A faire en autonomie
-On vous demande maintenant de compléter le schéma de la BD en créant les tables 
-nécessaires à la description des livraisons, colis, chargements, camions et modèles. On vous 
-demande de spécifier et d’exécuter les ordres SQL nécessaires à cette description. 
+属于操作？添加删除之类的？
+ 
 Vous devez également compléter la base de données pour prendre en compte les contraintes 
 d’intégrités suivantes :
+
 1. Les quantités sont des valeurs numériques positives ou nulles ; les quantités 
 commandées sont obligatoirement strictement positives
+-->该题是检查数量是否都是大于=0
+ALTER TABLE concerner 
+ADD CONSTRAINT cst_qte1 CHECK (qtecom >0) ; 
+
+ALTER TABLE concernerglob 
+ADD CONSTRAINT cst_qte2 CHECK (qtecom >0) ; 
+
+ALTER TABLE stocker 
+ADD CONSTRAINT cst_qte3 CHECK (qtemax >=0) ;
+
+ALTER TABLE stocker 
+ADD CONSTRAINT cst_qte3 CHECK (qtestock >=0) ; 
+
+ALTER TABLE stocker 
+ADD CONSTRAINT cst_qte3 CHECK (qtealerte >=0) ; 
+
 
 2. La quantité max est supérieure ou égale à la quantité en stock
 
+ALTER TABLE stocker 
+ADD CONSTRAINT cst_qtes CHECK (qtemax >=qtestock) ;
+
+
+
 3. L’état d’une commande peut être en cours, factorisée, ou livrée
+
+ALTER TABLE commande 
+ADD CONSTRAINT cst_etat CHECK (cometat IN ('en cours', 'factorisée', 
+'livrée')) ; 
 
 4. Les quantités commandées sont compatibles avec les quantités en stock et les quantités 
 max
 
-
-Rendre sur Moodle :
-Le Script SQL contenant les ordres SQL de création des tables en LDD avec les contraintes 
-d'intégrité, ainsi que les ordres SQL d'insertion en LMD.
-
+On ne peut pas faire une contrainte sur plusieurs tables hors ici qtestock 
+et qtemax sont dans la table stocker et qtecom dans la table concerner 
+ nécessite déclencheur (trigger)
 
 
 
-4.10Consultations SQL nécessitant des agrégations
+
+
+
+4.10Consultations SQL nécessitant des agrégations 复合函数
 Dans les requêtes ci-dessous, des concepts avancés de SQL sont à utiliser.
 Exercice : donner les requêtes SQL répondant aux besoins suivants
 
+----知识点回顾----
+    -having是先分组后筛选
+    
+----做题技巧-----
+    - 统计nb de couple 则count(*)
+    - au moins autant 一定要筛选出来后面提到的条件 （请看下面的exo 7和10）
+    - having 后面一定要接 大于或小于或=或sous requete（必须是子标量）
+    - 有having 则其前面一定有group by
+    - 有聚合函数一定用group by
+    
+
+
 1. Donner le nombre de commandes émises par le magasin La Marée
 
+select count(com.comnum)
+from commande com, magasin m
+where m.magnum = com.magnum
+and m.magnom = "La Marée"
+
+
 2. Donner le nombre de commandes et la quantité commandée pour le produit Moules2
+这里只需要2个表就好了 因为concerner里面有idcom
+
+select count(com.comnum )as nbCom, sum(con.qtecom)
+from produit p, concerner con
+where p.prodnum = con.prodnum
+and p.prodlib="Moules"
+
 
 3. Donner le nombre de produits commandés par commande
+这里只需要con这个表就好了 因为concerner里面有idcom 和idprod
+PS：如果有par，，，则用group by
+select com.comnum, count(p.prodnum )as nbProd
+from concerner con
+group by com.comnum
+
 
 4. Donner le nombre de produits commandés par commande globale
 
-5. Donner le nombre de couples magasin produit pour lesquels le produit est en alerte de 
+select comg.comglobnum, count(p.prodnum )as nbProd
+from concernerglob cong
+group by comg.comglobnum
+
+
+多看 请回答问题5. Donner le nombre de couples magasin produit pour lesquels le produit est en alerte de 
 stock
+是不是如果统计nb de couple 则count(*)？
+
+select count(*)
+from magasin m, produit p , stocker s
+where p.prodnum = s.prodnum
+AND m.magnum = s.magnum
+and s.qtestock < s.qtealert
+
 
 6. Donner le nom des magasins ayant émis au moins deux commandes en septembre 
 
-7. Donner le nom des magasins ayant émis au moins autant de commandes que le 
+select m.magnom
+from magasin m, commande com, 
+where m.magnum = com.magnum
+and to_char(comdate, "MM/YYYY") = "09/2020" 
+group by m.magnum
+having count(com.comnum)>= 2
+
+
+多看 *7. Donner le nom des magasins ayant émis au moins autant de commandes que le 
 magasin La Marée
 
+
+select m.magnom
+from magasin m, commande com, 
+where m.magnum = com.magnum
+and m.magnom = "La Marée" 
+group by com.comnum
+having count(com.comnum)>= 1
+分析错误：要主要，这里不包括La Marée的商店，属于需要排除
+
+改正：
+SELECT M.MAGNOM
+FROM COMMANDE C, MAGASIN M
+WHERE C.MAGNUM = M.MAGNUM
+AND M.MAGNOM <> 'La Marée'
+GROUP BY M.MAGNOM
+HAVING COUNT(C.COMNUM)>=(SELECT COUNT(C.COMNUM)
+                       FROM COMMANDE C, MAGASIN M
+                       WHERE C.MAGNUM = M.MAGNUM
+                       AND M.MAGNOM = 'La Marée');
+注意：如果是having的sous requete 它只能是子标量，也就是说出来只有一个答案，
+不能多个。
+
+
 8. Numéro et date des commandes de cette année qui comportent plus de dix produits
+
+select com.comnum, com.comdate
+from commande com, produit p, concerner con
+where com.comnum = con.comnum
+and p.prodnum = con.prodnum
+and to_char(comdate, "YYYY") = "2020" 
+group by com.comnum
+having count(p.prodnum)>10
+
+
 
 9. Pour chaque produit donner son nom, le nombre de fournisseurs et le nombre de 
 magasins dans lequel il est présent
 
-10. Donner la liste de commandes comportant autant de produits que la commande 10
+select  p.prodnum, count(m.magnum) as nb_mag, fou.fournom, count(f.fournum) as nb_fou, 
+from magasin m, produit p , stocker s,founir f, fournisseur fon
+where p.prodnum = s.prodnum
+AND m.magnum = s.magnum
+and f.fournum = f.fournum
+and p.prodnum = f.prodnum
+group by p.prodnum
+
+
+
+
+多看 *10. Donner la liste de commandes comportant autant de 如同 produits que la commande 10
+
+select com.cumnum
+from commande com, produit p, concerner con
+where com.comnum = con.comnum
+and p.prodnum = con.prodnum
+and  prodnum in
+    (select con.prodnum
+    from  concerner con
+    where com.comnum = 10)
+分析错误：
+首先，我要的是comnum ！= 10 --> c.comnum <> 10
+其次，在sous requet只用过一个表concerner 就好了
+
+改正：
+SELECT C.COMNUM
+FROM COMMANDE C, PRODUIT P, CONCERNER CON
+WHERE C.COMNUM=CON.COMNUM
+AND P.PRODNUM=CON.PRODNUM
+And c.comnum <> 10
+Group by c.comnum
+Having P.PRODNUM = (SELECT P.PRODNUM
+                  FROM CONCERNER CON
+                  WHERE CON.COMNUM = 10);
+
+
+
 
 4.11Interrogation nécessitant une sous-requête liée à la requête principale
 Requête préparatoire :
