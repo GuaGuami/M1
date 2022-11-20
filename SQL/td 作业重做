@@ -62,14 +62,14 @@ Select.
 
 1. Donner les commandes (numéro, date et état) passées en septembre 2021 ainsi que les 
 magasins les ayant émises
-
+/*--注意这里它有问商店的名字magasins--*/
 select com.comnum, com.comdate, cometat, magnom
 from commande com, magasin m
 where com.magnum = m.comnum
 and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
 
 
-2. Donner le secteur (ville et quartier) du magasin La Marée
+(没对答案)2. Donner le secteur (ville et quartier) du magasin La Marée
 a. Peut-on écrire la jointure de cette requête avec une sous-requête ?
 oui
 b. Justifiez votre réponse
@@ -82,7 +82,7 @@ where s.secnum in
   )
 
 
-3. Donner les produits (libellé) et les quantités commandées pour les commandes passées 
+(没对答案)3. Donner les produits (libellé) et les quantités commandées pour les commandes passées 
 en septembre 2021
 a. Peut-on écrire les jointures de cette requête avec des sous-requêtes ?
 oui
@@ -112,11 +112,11 @@ and c.comdate = "17/04/2021"
 
 
 
-*5. Donner la liste des produits figurant dans la commande du magasin La Marée datée du 
+（可多看）5. Donner la liste des produits figurant dans la commande du magasin La Marée datée du 
 17 avril 2021, en précisant pour chaque produit la commande globale (numéro et date) 
 dans laquelle il a été factorisé 
 
-SELECT p.prodnum, p.prodnom, p.prodvolume, comg.comglobnum, com.comglobdate
+SELECT p.prodnum, p.prodlib, p.prodvolume, comg.comglobnum, com.comglobdate
 FROM stocker s,produit p, magasin m,commande c,factoriser f,commandeglobale comg
 WHERE p.prodnum = s.prodnum
 AND m.prodnum = s.prodnum
@@ -126,9 +126,19 @@ AND comg.comgblobnum = f.comglobnum
 AND m.magnom = "La Marée"
 AND to_char(com.comdate, 'JJ/MM/YYYY') = '17/04/2021';
 
+（改正）
+SELECT prodlib, factoriser.comglobnum, COMGLOBDATE
+FROM factoriser, commandeglobale, produit, commande, magasin
+WHERE factoriser. comglobnum=commandeglobale.comglobnum 
+and factoriser.prodnum=produit.prodnum 
+and factoriser.comnum=commande.comnum 
+and commande.magnum=magasin.magnum
+AND MAGNOM='La Marée' 
+AND comdate='17/09/20'
+为什么我的 错了，因为走更加简洁的，在图里f和p可以直接连上 就不需要s了
 
 
-*6. Liste des couples (produit, commande) qui ont été factorisés par erreur sur deux 
+（难，多看看）6. Liste des couples (produit, commande) qui ont été factorisés par erreur sur deux 
 commandes globales différentes
 
 select p.prodlib, c.comnum
@@ -141,12 +151,23 @@ and f.comnum in
     where f1.comglobnum<>f.comnum
     having count(f1.comglobnum)=2
     )
+    
+改正：
+SELECT p.prodlib, c.comnum
+FROM produit p , factoriser f1, factoriser f2, commande c
+where f1.prodnum = f2.prodnum 
+and f1.comnum = c.comnum
+and f1.prodnum=p.prodnum
+and f1.comglobnum<>f2.comglobnum
+该题目问，com和prod 一起（起名cp）的表和comgb的表有错误
+这里，cp 和comgb的表都共用了fac表。所以可以利用两个表中fac的表来找不同，所以起名f1 （为cp中的）和f2（为comgb中的表）。
 
 
 
 
 7. Donner les produits (libellé) avec les quantités commandées concernant les 
 commandes passées en septembre 2021 par le magasin La Marée
+
 select p.prodlib, con. qtecom
 from produit p, commande com, concerner con, magasin m
 where c.comnum = con.comnum
@@ -161,21 +182,21 @@ from produit p, stocker s, magasin m
 where  m.magnom = "La Marée"
 and s.magnum = m.magnum 
 and p.prodnum = s.prodnum
-and s.QTEALERT < s.qtestock
+and s.QTEALERT >= s.qtestock
 
 
 9. Donner la liste des produits (libellé) avec les quantités commandées concernant les 
 commandes globales de septembre 2021.
-select p.prodlib
+select p.prodlib, cong.qtecom
 from produit p, concernergglob cong, commandeglobale comgb
 where cong.prodnum =p.prodnum
 and comgb.comglobnum = cong.comglonum
 and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
 
 
-10. Donner pour chaque produit figurant sur la commande du 17 avril 2021 de la marée, le 
+(要注意这里 （可多看）)10. Donner pour chaque produit figurant sur la commande du 17 avril 2021 de la marée, le 
 nom du fournisseur choisi par la centrale d'achat.
-
+自己写的这里是错的：
 SELECT p.prodnum, p.prodnom, fou.fournum
 FROM stocker s,produit p, magasin m,commande c, fournisseur fou, fournir f
 WHERE p.prodnum = s.prodnum
@@ -186,19 +207,171 @@ AND p.prodnum = f.prodnum
 AND m.magnom = "La Marée"
 AND to_char(com.comdate, 'JJ/MM/YYYY') = '17/04/2021'
 Group by p.prodnum,  p.prodnom
+(修正)：
+select PRODLIB, fournom 
+From commande, magasin, factoriser, produit, COMMANDEGLOBALE, fournisseur 
+Where magnom = 'La Marée' 
+And comdate = '17/09/2020' 
+And commande.magnum = magasin.magnum 
+And produit.prodnum = factoriser.prodnum 
+and commande.comnum = factoriser.comnum 
+and COMMANDEGLOBALE.COMGLOBNUM = factoriser.COMGLOBNUM 
+and COMMANDEGLOBALE.fournum = fournisseur.fournum
+为什么要连上factoriser呢？-->题目说了需要par la centrale d'acha，可以查看背景la centrale d'acha是和fac有关系的。
+为什么是comgb不是com 呢？--> comgb可以连上fournisseur
+
+
+
+4.8 Requêtes ensemblistes 设置查询
+Les requêtes ci-dessous nécessitent l'utilisation d'opérateurs ensemblistes de l'algèbre 
+relationnelle 运用集合运算符号
+
+1. Donner la liste des produits qui ne sont pas stockés par le magasin 'La Marée'
+
+运算符号是： intersection ， union， minus ?
+
+
+(
+select *
+from produit 
+where p.prodnum = s.prodnum 
+and m.magnum = s.magnum)
+minus
+(
+select p.prodnum
+from produit p, stocker s, magasin m
+where p.prodnum = s.prodnum 
+and m.magnum = s.magnum
+and magnom = "La Marée")
+  
+是否可以这么做呢？
+
+select *
+from produit 
+where prodnum not in 
+  (select p.prodnum
+  from produit p, stocker s, magasin m
+  where p.prodnum = s.prodnum 
+  and m.magnum = s.magnum
+  and magnom = "La Marée"
+  )
+  
+请问in 和not in 是运算符号吗
+
+2. Donner la liste des produits fournis à la fois par le fournisseur 'Seguin' et par le 
+fournisseur 'Petit Breton'
 
 
 
 
+3. Liste des produits commandés par un magasin et qui n'ont pas été factorisés sur une 
+commande globale
+
+4. Donner pour le produit 'Huitres' la listes des commandes pour lesquelles il a été 
+commandé et il n'a pas été factorisé sur une commande globale.
+
+5. Donner le code et la date des commandes ne contenant que des huitres.
 
 
 
 
+4.9 Mise à jour du schéma de la BD (utilisation du LDD)
+A faire en autonomie
+On vous demande maintenant de compléter le schéma de la BD en créant les tables 
+nécessaires à la description des livraisons, colis, chargements, camions et modèles. On vous 
+demande de spécifier et d’exécuter les ordres SQL nécessaires à cette description. 
+Vous devez également compléter la base de données pour prendre en compte les contraintes 
+d’intégrités suivantes :
+1. Les quantités sont des valeurs numériques positives ou nulles ; les quantités 
+commandées sont obligatoirement strictement positives
+
+2. La quantité max est supérieure ou égale à la quantité en stock
+
+3. L’état d’une commande peut être en cours, factorisée, ou livrée
+
+4. Les quantités commandées sont compatibles avec les quantités en stock et les quantités 
+max
+
+
+Rendre sur Moodle :
+Le Script SQL contenant les ordres SQL de création des tables en LDD avec les contraintes 
+d'intégrité, ainsi que les ordres SQL d'insertion en LMD.
 
 
 
 
+4.10Consultations SQL nécessitant des agrégations
+Dans les requêtes ci-dessous, des concepts avancés de SQL sont à utiliser.
+Exercice : donner les requêtes SQL répondant aux besoins suivants
 
+1. Donner le nombre de commandes émises par le magasin La Marée
+
+2. Donner le nombre de commandes et la quantité commandée pour le produit Moules2
+
+3. Donner le nombre de produits commandés par commande
+
+4. Donner le nombre de produits commandés par commande globale
+
+5. Donner le nombre de couples magasin produit pour lesquels le produit est en alerte de 
+stock
+
+6. Donner le nom des magasins ayant émis au moins deux commandes en septembre 
+
+7. Donner le nom des magasins ayant émis au moins autant de commandes que le 
+magasin La Marée
+
+8. Numéro et date des commandes de cette année qui comportent plus de dix produits
+
+9. Pour chaque produit donner son nom, le nombre de fournisseurs et le nombre de 
+magasins dans lequel il est présent
+
+10. Donner la liste de commandes comportant autant de produits que la commande 10
+
+4.11Interrogation nécessitant une sous-requête liée à la requête principale
+Requête préparatoire :
+
+0. Donner l'historique des tarifs pratiqués par les fournisseur 'Seguin' puis 'Petit Breton' 
+pour les différents produits qu’il fournissent
+Requêtes avec sous requête liée
+
+1. Donner les tarifs à la date du jour concernant les différents produits qu’il fournissent 
+pour le fournisseur 'Seguin' puis pour le fournisseur 'Petit Breton'
+a) Si les tarifs des produits sont historisés tous les jours, il suffit d'ajouter une 
+restriction sur la date du tarif (histodate) à la requête précédente.
+b) Si les tarifs sont historisés uniquement quant il y a un changement de tarif, il 
+faut chercher pour chaque produit 'x', un tarif dont la date correspond à la date 
+maximum parmi les date des tarifs du produit 'x' (ce qui implique une sousrequête liée au produit 'x' en cours d'examen dans la requête principale)
+
+
+2. Donner les tarifs pratiqués (prix et seuil de commande) par les différents fournisseurs 
+pour le produit huitre à la date du jour 
+
+3. Donner le meilleur tarif pratiqué (prix et seuil de commande) pour le produit huitre à 
+la date du jour 
+Autres requêtes pouvant nécessiter une sous-requête requête liée :
+1. Liste des factorisations rattachées à des commandes globales, concernant des produits 
+qui n'ont pas été commandés dans la commande concernée
+2. Liste des produits commandés par un magasin alors qu'il ne font pas parti des produits 
+stockés par le magasin
+
+
+4.12Autres consultations SQL
+
+1. Donner le nombre de magasins ayant émis au moins deux commandes en septembre3
+
+2. Donner les commandes non factorisées
+
+3. Donner les commandes factorisées
+
+4. Donner le montant de la commande 7
+
+5. Donner le montant des commandes du magasin La Marée
+
+6. Donner la moyenne des prix des commandes du magasin La Marée
+
+7. Donner les lignes de commande globale pour lesquelles la quantité commandée est 
+inférieurs à la somme des quantité commandées qui ont été factorisées (sur la ligne de 
+commande globale en question）
 
 
 
