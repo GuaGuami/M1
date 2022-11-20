@@ -55,14 +55,15 @@ from  stocker s
 where  s.qtectock < s.qtealert
 
 
-4.7 Consultation multi-tables
+(已对答案)4.7 Consultation multi-tables 
 Dans les requêtes ci-dessous, plusieurs tables doivent être spécifiées dans la clause From du 
 Select.
 
 
 1. Donner les commandes (numéro, date et état) passées en septembre 2021 ainsi que les 
 magasins les ayant émises
-select com.comnum, com.comdate, cometat
+
+select com.comnum, com.comdate, cometat, magnom
 from commande com, magasin m
 where com.magnum = m.comnum
 and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
@@ -146,11 +147,63 @@ and f.comnum in
 
 7. Donner les produits (libellé) avec les quantités commandées concernant les 
 commandes passées en septembre 2021 par le magasin La Marée
+select p.prodlib, con. qtecom
+from produit p, commande com, concerner con, magasin m
+where c.comnum = con.comnum
+and p.prodnum = con.prodnum
+and m.magnum = com.magnum
+and m.magnom = "La Marée"
+and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
+
 8. Donner les produits (libellé) en alerte pour le magasin La Marée 
+select p.prodlib
+from produit p, stocker s, magasin m
+where  m.magnom = "La Marée"
+and s.magnum = m.magnum 
+and p.prodnum = s.prodnum
+and s.QTEALERT < s.qtestock
+
+
 9. Donner la liste des produits (libellé) avec les quantités commandées concernant les 
 commandes globales de septembre 2021.
+select p.prodlib
+from produit p, concernergglob cong, commandeglobale comgb
+where cong.prodnum =p.prodnum
+and comgb.comglobnum = cong.comglonum
+and to_char(com.comdateliv, 'MM/YYYY') = '09/2020'
+
+
 10. Donner pour chaque produit figurant sur la commande du 17 avril 2021 de la marée, le 
 nom du fournisseur choisi par la centrale d'achat.
+
+SELECT p.prodnum, p.prodnom, fou.fournum
+FROM stocker s,produit p, magasin m,commande c, fournisseur fou, fournir f
+WHERE p.prodnum = s.prodnum
+AND m.prodnum = s.prodnum
+AND c.magnum = m.magnum
+AND f.fournum = fou.fournum
+AND p.prodnum = f.prodnum
+AND m.magnom = "La Marée"
+AND to_char(com.comdate, 'JJ/MM/YYYY') = '17/04/2021'
+Group by p.prodnum,  p.prodnom
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
