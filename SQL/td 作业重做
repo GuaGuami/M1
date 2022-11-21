@@ -15,6 +15,11 @@ from produit
 where produit like '%B'
 
 请问以b开头 以b结尾 中间含有b 如何表达？
+ like %关键字：以关键字开头的记录
+
+ like 关键字%：以关键字结尾的记录
+ 
+ like %关键字% ：包含以关键字的记录
 
 
 3. Donner le nom des produits
@@ -616,40 +621,169 @@ Requête préparatoire :
 pour les différents produits qu’il fournissent
 Requêtes avec sous requête liée
 
+select c.histodate, f.proprix p.prodlib
+from cal c, p.produit, f founir
+where f.prodnum = p.prodnum
+and c.histodate = f.histodate
+and f.fournum in 
+    (select fournum 
+    from fournum
+    where fournom = 'Seguin' 
+    and fouenom = 'Petit Breton' )
+
+
+
 1. Donner les tarifs à la date du jour concernant les différents produits qu’il fournissent 
 pour le fournisseur 'Seguin' puis pour le fournisseur 'Petit Breton'
 a) Si les tarifs des produits sont historisés tous les jours, il suffit d'ajouter une 
 restriction sur la date du tarif (histodate) à la requête précédente.
+
+
+select histodat, proprix, prodnum
+from fournir, fournisseur
+where fournir.fournum = fournisseur.fournum 
+and fournom=’Seguin
+and histodate=’30/09/2020’
+order by prodnum, histodate desc’
+
+蒋明？？
+Select fs.fournom, p.prodlib, fr.histodate, fr.proprix
+From fournisseur fs, fournir fr , produit p
+Where fs.fournum=fr.fournum
+And fr.prodnum=p.prodnum
+And (fs.fournom='Seguin'
+Or fs.fournom='Tafforet')
+And to_date(fr.histodate, 'dd/mm/yyyy')<=to_date(sysdate,'dd/mm/yyyy')
+Order by fs.fournom, p.prodlib;
+
+
+
 b) Si les tarifs sont historisés uniquement quant il y a un changement de tarif, il 
 faut chercher pour chaque produit 'x', un tarif dont la date correspond à la date 
 maximum parmi les date des tarifs du produit 'x' (ce qui implique une sousrequête liée au produit 'x' en cours d'examen dans la requête principale)
 
+select proprix, prodnum
+from fournir f1, fournisseur
+where f1.fournum = fournisseur.fournum
+and fournom = 'Seguin'
+and histodate IN
+    (select max(histodate)
+    from fournir f2, fournisseur
+    where f2.fournum=fournisseur.fournum
+    and fournom ='Seguin'
+    and f1.prodnum = f2.prodnum)
+
+
+
 
 2. Donner les tarifs pratiqués (prix et seuil de commande) par les différents fournisseurs 
-pour le produit huitre à la date du jour 
+pour le produit huitre à la date du du 30/09/2020 
+
+
+select f.proprix, f.seuil, fou.fournom
+from fournir f,produit p, fournisseur fou
+where f.histodate = "30/09/2020"
+and p.prodlib = "huitre"
+group by fou.fournom
+
 
 3. Donner le meilleur tarif pratiqué (prix et seuil de commande) pour le produit huitre à 
-la date du jour 
+la date du 30/09/2020
+
+select min(f.proprix), f.seuil
+from fournir f,produit p
+where f.histodate = "30/09/2020"
+and p.prodlib = "huitre"
+
+
 Autres requêtes pouvant nécessiter une sous-requête requête liée :
 1. Liste des factorisations rattachées à des commandes globales, concernant des produits 
 qui n'ont pas été commandés dans la commande concernée
+
+select comglobnum, comglobdate
+from concernerglob cong, commandeglobale comg, produit p
+where cong.comglobnum = comg.comglobnum 
+and cong.prodnum = p.prodnum
+and p.prodnum NOT IN (
+    select prodnum
+    from concerner con, commande com
+    where con.comnum =  comnum
+    )
+
+
 2. Liste des produits commandés par un magasin alors qu'il ne font pas parti des produits 
 stockés par le magasin
+
+select p.prodnum, p.prodlib
+from produit p, concerner con, commande com
+where p.prodnum = con.prodnum
+and com.magnum = m.magnum 
+and m.magnum NOT IN 
+    (select p.prodnum
+    from produit p, stocker s, magasin m
+    where p.prodnum=s.prodnum
+    and s.magnum=m.magnum
+    and com.magnum=m.magnum);
+
+
 
 
 4.12Autres consultations SQL
 
 1. Donner le nombre de magasins ayant émis au moins deux commandes en septembre3
 
+select count(magnum) as nbMag
+from commande 
+where to_char(comdate, "MM/YYYY") = "09/2022"
+group by M.magnum, M.magnom
+having count(comnum ) >=2
+
+
+
+
 2. Donner les commandes non factorisées
+
+select comnum
+from commande
+where comnum NOT IN
+    (select f.commun
+    from factoriser f
+    )
+
 
 3. Donner les commandes factorisées
 
+select comnum
+from commande, factoriser f
+where com.comnum = f.comnum
+
+
 4. Donner le montant de la commande 7
+
+select sum(qtecom*proprix)
+from magasin m, commande com, factoriser f, fournir fou
+where com.comnum = 7
+and m.magnum = com.magnum
+and f.prodnum = fou.prodnum
+
 
 5. Donner le montant des commandes du magasin La Marée
 
+select sum(qtecom*proprix)
+from magasin m, commande com, factoriser f, fournir fou
+where m.magnom = "La Marée"
+and m.magnum = com.magnum
+and f.prodnum = fou.prodnum
+
+
+
 6. Donner la moyenne des prix des commandes du magasin La Marée
+
+select round(avg(SUM(qtecom*proprix)),2)
+from magasin m, commande com, factoriser f, fournir fou
+where m.magnom = "La Marée"
+and m.magnum = com.magnum
+and f.prodnum = fou.prodnum
 
 7. Donner les lignes de commande globale pour lesquelles la quantité commandée est 
 inférieurs à la somme des quantité commandées qui ont été factorisées (sur la ligne de 
